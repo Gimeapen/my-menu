@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta property="og:title" content="我的电子菜单">
+<meta property="og:description" content="日历式三餐安排 + 个人菜单库">
+<meta name="description" content="日历式三餐安排 + 个人菜单库">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#faf7f2">
+<title>我的电子菜单</title>
+<style>
+:root{
+  --bg:#faf7f2;
+  --card:#ffffff;
+  --text:#2c2a27;
+  --sub:#9a9289;
+  --line:#eee8de;
+  --primary:#e07a3f;
+  --primary-soft:#fdf0e7;
+  --danger:#d9534f;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+.app{
+  position:relative;max-width:560px;margin:0 auto;
+  height:100vh;height:100dvh;display:flex;flex-direction:column;
+  background:var(--bg);box-shadow:0 0 40px rgba(0,0,0,.06);
+}
+.hidden{display:none !important;}
+
+/* ---------- 顶栏 ---------- */
+.app-header{
+  flex:none;display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px 10px;padding-top:calc(14px + env(safe-area-inset-top));
+  background:rgba(250,247,242,.92);backdrop-filter:blur(10px);
+  border-bottom:1px solid transparent;
+}
+.app-header h1{font-size:19px;margin:0;font-weight:700;letter-spacing:.5px;}
+.icon-btn{
+  border:0;background:none;font-size:20px;color:var(--sub);
+  width:34px;height:34px;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex:none;
+}
+.icon-btn:active{background:#efe9df;}
+
+/* ---------- 主体 ---------- */
+main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:16px;}
+.page{animation:fade .2s ease;}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ---------- 日历 ---------- */
+.cal-head{display:flex;align-items:center;justify-content:center;gap:14px;padding:6px 16px 12px;}
+.cal-title{font-size:16px;font-weight:600;cursor:pointer;user-select:none;min-width:110px;text-align:center;}
+.weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:0 14px 8px;}
+.weekdays span{text-align:center;font-size:12px;color:var(--sub);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:0 14px;}
+.cal-cell{
+  aspect-ratio:1;border-radius:12px;background:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:1.5px solid transparent;cursor:pointer;position:relative;
+  transition:transform .12s ease,border-color .15s;
+  box-shadow:0 1px 4px rgba(0,0,0,.03);
+}
+.cal-cell:active{transform:scale(.93);}
+.cal-cell.other{background:transparent;box-shadow:none;color:#d5cec3;pointer-events:none;}
+.cal-cell.today{border-color:var(--primary);}
+.cal-cell.today .dnum{color:var(--primary);font-weight:700;}
+.dnum{font-size:15px;line-height:1;}
+.dots{position:absolute;bottom:7px;display:flex;gap:3px;}
+.dot{width:4px;height:4px;border-radius:50%;}
+.dot.b{background:#7fb069;}
+.dot.l{background:#e8a33d;}
+.dot.d{background:#6b8cbe;}
+
+/* 今日速览 */
+.today-card{
+  margin:18px 14px 4px;background:#fff;border-radius:16px;
+  padding:14px 16px 12px;box-shadow:0 2px 14px rgba(0,0,0,.05);
+}
+.tc-head{font-size:13px;color:var(--sub);margin-bottom:10px;}
+.tc-row{display:flex;gap:10px;padding:5px 0;font-size:14px;align-items:baseline;}
+.tc-label{flex:none;width:62px;color:var(--sub);font-size:13px;}
+.tc-val{flex:1;line-height:1.45;}
+.tc-val.muted{color:#c8c0b4;}
+.tc-edit{
+  margin-top:10px;width:100%;border:0;background:var(--primary-soft);
+  color:var(--primary);font-weight:600;font-size:14px;padding:10px;
+  border-radius:10px;cursor:pointer;font-family:inherit;
+}
+.tc-edit:active{opacity:.75;}
+
+/* ---------- 菜单库 ---------- */
+.search-wrap{padding:4px 14px 12px;}
+.search-wrap input{
+  width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;
+  padding:11px 14px;font-size:16px;font-family:inherit;outline:none;color:var(--text);
+}
+.search-wrap input:focus{border-color:var(--primary);}
+.dish-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:0 14px;}
+.dish-card{
+  background:#fff;border-radius:14px;overflow:hidden;cursor:pointer;
+  box-shadow:0 2px 10px rgba(0,0,0,.05);transition:transform .12s;
+}
+.dish-card:active{transform:scale(.97);}
+.dish-thumb{aspect-ratio:4/3;background:#f3ede4;position:relative;}
+.dish-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.dish-name{
+  padding:9px 11px 11px;font-size:14px;font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.empty-state{padding:70px 30px;text-align:center;color:var(--sub);line-height:1.8;font-size:14px;}
+.empty-state .es-icon{font-size:46px;margin-bottom:12px;}
+
+/* ---------- 悬浮按钮 ---------- */
+.fab{
+  position:absolute;right:18px;bottom:calc(72px + env(safe-area-inset-bottom));
+  width:54px;height:54px;border-radius:50%;border:0;
+  background:var(--primary);color:#fff;font-size:26px;line-height:1;
+  box-shadow:0 6px 20px rgba(224,122,63,.42);cursor:pointer;z-index:30;
+  display:flex;align-items:center;justify-content:center;
+}
+.fab:active{transform:scale(.92);}
+
+/* ---------- 底部导航 ---------- */
+.tabbar{
+  flex:none;display:flex;border-top:1px solid var(--line);
+  background:rgba(255,255,255,.96);backdrop-filter:blur(12px);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.tabbar button{
+  flex:1;border:0;background:none;padding:9px 0 9px;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:11px;color:var(--sub);cursor:pointer;font-family:inherit;
+}
+.tabbar button span{font-size:19px;line-height:1;}
+.tabbar button.active{color:var(--primary);font-weight:600;}
+
+/* ---------- 弹层 ---------- */
+.mask{
+  position:fixed;inset:0;background:rgba(30,25,20,.38);
+  opacity:0;pointer-events:none;transition:opacity .26s ease;z-index:40;
+}
+.mask.open{opacity:1;pointer-events:auto;}
+.sheet{
+  position:fixed;left:50%;bottom:0;width:100%;max-width:560px;
+  max-height:88dvh;background:#fff;border-radius:20px 20px 0 0;
+  transform:translate(-50%,102%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+  display:flex;flex-direction:column;z-index:50;
+  box-shadow:0 -8px 40px rgba(0,0,0,.16);
+}
+.sheet.open{transform:translate(-50%,0);}
+.sheet-handle{width:36px;height:4px;background:#e6ded2;border-radius:2px;margin:8px auto 0;flex:none;}
+.sheet-head{
+  flex:none;display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px 8px 18px;
+}
+.sheet-head h2{font-size:17px;margin:0;font-weight:600;}
+.sheet-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 16px 18px;}
+.sheet-foot{
+  flex:none;padding:10px 16px calc(14px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--line);
+}
+.btn{
+  width:100%;border:1px solid var(--line);background:#fff;color:var(--text);
+  font-size:16px;font-weight:600;font-family:inherit;padding:12px;
+  border-radius:12px;cursor:pointer;
+}
+.btn:active{opacity:.7;}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff;}
+.btn.danger{color:var(--danger);border-color:#f0d4d3;background:#fdf6f6;}
+.btn.ghost{background:var(--primary-soft);border-color:transparent;color:var(--primary);}
+.btn.small{width:auto;font-size:14px;padding:8px 14px;border-radius:9px;font-weight:500;}
+
+/* 三餐卡片 */
+.meal-card{
+  background:#fff;border:1px solid var(--line);border-radius:15px;
+  padding:12px 13px;margin-bottom:12px;
+}
+.meal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
+.meal-name{font-weight:600;font-size:15px;}
+.btn-add{
+  border:0;background:var(--primary-soft);color:var(--primary);
+  padding:6px 13px;border-radius:999px;font-size:13px;font-weight:600;
+  cursor:pointer;font-family:inherit;
+}
+.btn-add:active{opacity:.7;}
+.meal-list{display:flex;flex-direction:column;gap:7px;}
+.meal-item{
+  display:flex;align-items:center;gap:10px;padding:6px 8px 6px 6px;
+  border-radius:11px;background:#fbf9f5;cursor:pointer;
+}
+.meal-item:active{background:#f4efe7;}
+.meal-item img{width:42px;height:42px;border-radius:9px;object-fit:cover;flex:none;background:#efe9df;}
+.mi-name{flex:1;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mi-del{
+  border:0;background:none;color:#c3bbaf;font-size:18px;width:28px;height:28px;
+  cursor:pointer;flex:none;line-height:1;border-radius:50%;
+}
+.mi-del:active{background:#eee8de;}
+.empty-tip{font-size:13px;color:#c8c0b4;padding:8px 2px;}
+
+/* 选菜面板 */
+.pick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.pick-card{position:relative;cursor:pointer;}
+.pick-thumb{
+  aspect-ratio:1;border-radius:11px;overflow:hidden;background:#f3ede4;
+  border:2.5px solid transparent;transition:border-color .15s;
+}
+.pick-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.pick-card.sel .pick-thumb{border-color:var(--primary);}
+.pick-name{
+  font-size:12px;padding:5px 2px 0;text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.pick-check{
+  position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:50%;
+  background:var(--primary);color:#fff;font-size:13px;
+  display:none;align-items:center;justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,.2);
+}
+.pick-card.sel .pick-check{display:flex;}
+
+/* 菜品详情 */
+.detail-cover{width:100%;border-radius:14px;display:block;object-fit:cover;max-height:260px;background:#f3ede4;}
+.detail-cover.no-img{height:150px;display:flex;align-items:center;justify-content:center;font-size:44px;}
+.detail-name{font-size:20px;font-weight:700;margin:14px 0 4px;}
+.detail-section{margin-top:18px;}
+.sec-title{font-size:13px;color:var(--sub);font-weight:600;margin-bottom:8px;letter-spacing:.5px;}
+.ing-list{list-style:none;margin:0;padding:0;background:#fbf9f5;border-radius:12px;padding:4px 14px;}
+.ing-list li{
+  display:flex;justify-content:space-between;gap:16px;
+  padding:9px 0;font-size:14px;border-bottom:1px solid #f0ebe2;
+}
+.ing-list li:last-child{border-bottom:0;}
+.ing-list .amt{color:var(--sub);flex:none;}
+.detail-img{width:100%;border-radius:12px;display:block;margin-bottom:10px;background:#f3ede4;}
+.note-text{font-size:14px;line-height:1.7;margin:0;color:#4a453e;white-space:pre-wrap;}
+.detail-actions{display:flex;gap:10px;margin-top:24px;}
+
+/* 表单 */
+.field{margin-bottom:18px;}
+.field-label{display:block;font-size:13px;color:var(--sub);font-weight:600;margin-bottom:8px;}
+.req{color:var(--danger);}
+.input{
+  width:100%;border:1px solid var(--line);background:#fbf9f5;border-radius:11px;
+  padding:11px 13px;font-size:16px;font-family:inherit;color:var(--text);outline:none;
+  transition:border-color .15s,background .15s;
+}
+.input:focus{border-color:var(--primary);background:#fff;}
+textarea.input{resize:vertical;min-height:80px;line-height:1.6;}
+.cover-upload{
+  display:block;width:100%;aspect-ratio:16/10;border-radius:14px;
+  background:#fbf9f5;border:1.5px dashed #ddd5c8;overflow:hidden;
+  cursor:pointer;position:relative;
+}
+.cover-upload img{width:100%;height:100%;object-fit:cover;display:block;}
+.upload-tip{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:6px;
+  color:#bdb4a6;font-size:13px;text-align:center;line-height:1.6;
+}
+.upload-tip b{font-size:26px;font-weight:400;}
+.ing-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
+.ing-row .ing-name{flex:1.4;}
+.ing-row .ing-amount{flex:1;}
+.ing-row .icon-btn{font-size:16px;width:30px;height:30px;color:#c3bbaf;}
+.detail-imgs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+.detail-imgs:empty{display:none;}
+.dimg{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#f3ede4;}
+.dimg img{width:100%;height:100%;object-fit:cover;display:block;}
+.dimg-del{
+  position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;
+  border:0;background:rgba(0,0,0,.55);color:#fff;font-size:13px;
+  cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;
+}
+
+/* 更多操作 */
+.list-btn{
+  width:100%;border:0;background:none;text-align:left;font-family:inherit;
+  font-size:16px;padding:15px 8px;border-bottom:1px solid var(--line);
+  cursor:pointer;color:var(--text);
+}
+.list-btn:last-child{border-bottom:0;}
+.list-btn:active{background:#fbf9f5;}
+.list-btn.danger{color:var(--danger);}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="app-header">
+    <h1 id="pageTitle">我的菜单</h1>
+    <button class="icon-btn" id="btnMore">⋯</button>
+  </header>
+
+  <main id="main">
+    <!-- ========== 日历页 ========== -->
+    <section class="page" id="page-calendar">
+      <div class="cal-head">
+        <button class="icon-btn" id="prevMonth">‹</button>
+        <div class="cal-title" id="calTitle">—</div>
+        <button class="icon-btn" id="nextMonth">›</button>
+      </div>
+      <div class="weekdays">
+        <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="today-card" id="todayCard"></div>
+    </section>
+
+    <!-- ========== 菜单库 ========== -->
+    <section class="page hidden" id="page-menu">
+      <div class="search-wrap">
+        <input id="searchInput" placeholder="搜索菜名…" autocomplete="off">
+      </div>
+      <div class="dish-grid" id="dishGrid"></div>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button data-tab="calendar" class="active"><span>📅</span>日历</button>
+    <button data-tab="menu"><span>🍲</span>菜单库</button>
+  </nav>
+
+  <button class="fab hidden" id="fab">＋</button>
+</div>
+
+<!-- ===== 弹层 1：当天三餐 ===== -->
+<div class="mask" id="mask1"></div>
+<div class="sheet" id="sheetDay">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <h2 id="dayTitle">—</h2>
+    <button class="icon-btn" data-close="sheetDay,mask1">✕</button>
+  </div>
+  <div class="sheet-body" id="dayBody"></div>
+</div>
+
+<!-- ===== 弹层 2：选菜 ===== -->
+<div class="mask" id="mask2" style="z-index:55"></div>
+<div class="sheet" id="sheetPick" style="z-index:60">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <h2 id="pickTitle">选择菜品</h2>
+    <button class="icon-btn" data-close="sheetPick,mask2">✕</button>
+  </div>
+  <div class="sheet-body" id="pickBody"></div>
+  <div class="sheet-foot">
+    <button class="btn primary" id="pickConfirm">确定</button>
+  </div>
+</div>
+
+<!-- ===== 弹层 3：菜品详情 ===== -->
+<div class="mask" id="mask3" style="z-index:65"></div>
+<div class="sheet" id="sheetDish" style="z-index:70">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <h2 id="dishTitle">菜品</h2>
+    <button class="icon-btn" data-close="sheetDish,mask3">✕</button>
+  </div>
+  <div class="sheet-body" id="dishBody"></div>
+</div>
+
+<!-- ===== 弹层 4：菜品表单 ===== -->
+<div class="mask" id="mask4" style="z-index:75"></div>
+<div class="sheet" id="sheetForm" style="z-index:80">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <h2 id="formTitle">添加菜品</h2>
+    <button class="icon-btn" data-close="sheetForm,mask4">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="field">
+      <label class="field-label">封面图</label>
+      <label class="cover-upload" id="coverUpload">
+        <input type="file" accept="image/*" id="coverInput" hidden>
+        <img id="coverPreview" class="hidden" alt="">
+        <div class="upload-tip" id="coverTip"><b>📷</b>点击上传封面图</div>
+      </label>
+    </div>
+    <div class="field">
+      <label class="field-label">菜名 <span class="req">*</span></label>
+      <input class="input" id="fName" placeholder="例如：番茄炒蛋" autocomplete="off">
+    </div>
+    <div class="field">
+      <label class="field-label">配料</label>
+      <div id="ingList"></div>
+      <button type="button" class="btn ghost small" id="addIng">＋ 添加配料</button>
+    </div>
+    <div class="field">
+      <label class="field-label">详情图（配料图 / 步骤图）</label>
+      <div class="detail-imgs" id="detailImgs"></div>
+      <label class="btn ghost small" style="display:inline-block">
+        ＋ 上传图片
+        <input type="file" accept="image/*" id="detailInput" multiple hidden>
+      </label>
+    </div>
+    <div class="field">
+      <label class="field-label">备注 / 做法</label>
+      <textarea class="input" id="fNote" rows="3" placeholder="可选，随手记点什么…"></textarea>
+    </div>
+  </div>
+  <div class="sheet-foot">
+    <button class="btn primary" id="btnSaveDish">保存</button>
+  </div>
+</div>
+
+<!-- ===== 弹层 5：更多操作 ===== -->
+<div class="mask" id="mask5" style="z-index:85"></div>
+<div class="sheet" id="sheetMore" style="z-index:90">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head"><h2>数据管理</h2></div>
+  <div class="sheet-body" style="padding-bottom:6px">
+    <button class="list-btn" id="btnExport">📤 导出备份（JSON）</button>
+    <button class="list-btn" id="btnImport">📥 导入备份</button>
+    <button class="list-btn danger" id="btnClear">🗑 清空所有数据</button>
+  </div>
+  <div class="sheet-foot">
+    <button class="btn" data-close="sheetMore,mask5">取消</button>
+  </div>
+</div>
+<input type="file" id="importInput" accept=".json,application/json" hidden>
+
+<script>
+/* ========================================================
+   基础工具
+======================================================== */
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2, '0');
+const fmtDate = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const uid = () => 'd_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="120" height="120" fill="#f0eae0"/><text x="60" y="74" font-size="42" text-anchor="middle">🍽</text></svg>'
+);
+
+/* 图片压缩转 dataURL */
+function fileToDataURL(file, maxSize = 1200, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      let w = img.naturalWidth, h = img.naturalHeight;
+      const scale = Math.min(1, maxSize / Math.max(w, h));
+      w = Math.max(1, Math.round(w * scale));
+      h = Math.max(1, Math.round(h * scale));
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      resolve(cv.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('图片读取失败')); };
+    img.src = url;
+  });
+}
+
+/* ========================================================
+   IndexedDB
+======================================================== */
+let db = null;
+const DB_NAME = 'my-menu-db', DB_VER = 1;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('dishes')) d.createObjectStore('dishes', { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('plans'))  d.createObjectStore('plans',  { keyPath: 'date' });
+    };
+    req.onsuccess = e => { db = e.target.result; resolve(); };
+    req.onerror = e => reject(e.target.error);
+  });
+}
+const store = (name, mode = 'readonly') => db.transaction(name, mode).objectStore(name);
+const reqP = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+const dbGetAll = n => reqP(store(n).getAll());
+const dbPut    = (n, v) => reqP(store(n, 'readwrite').put(v));
+const dbDelete = (n, k) => reqP(store(n, 'readwrite').delete(k));
+const dbClear  = n => reqP(store(n, 'readwrite').clear());
+
+/* ========================================================
+   全局状态
+======================================================== */
+const state = {
+  dishes: [],
+  dishMap: {},
+  plans: {},                 // { 'YYYY-MM-DD': {breakfast:[],lunch:[],dinner:[]} }
+  currentMonth: new Date(),
+  selectedDate: null,
+  pickMeal: null,
+  pickSelected: new Set(),
+  searchQuery: '',
+  tab: 'calendar'
+};
+let formCover = null;
+let formDetails = [];
+let editingId = null;
+
+const emptyMeals = () => ({ breakfast: [], lunch: [], dinner: [] });
+const copyMeals = m => ({
+  breakfast: [...(m && m.breakfast || [])],
+  lunch:     [...(m && m.lunch || [])],
+  dinner:    [...(m && m.dinner || [])]
+});
+const MEALS = [
+  { key: 'breakfast', name: '早餐', icon: '🌅' },
+  { key: 'lunch',     name: '午餐', icon: '☀️' },
+  { key: 'dinner',    name: '晚餐', icon: '🌙' }
+];
+
+/* ========================================================
+   数据加载
+======================================================== */
+async function loadData() {
+  state.dishes = await dbGetAll('dishes');
+  state.dishes.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  state.dishMap = {};
+  state.dishes.forEach(d => state.dishMap[d.id] = d);
+  const plans = await dbGetAll('plans');
+  state.plans = {};
+  plans.forEach(p => state.plans[p.date] = p.meals || emptyMeals());
+}
+async function savePlan(date, meals) {
+  state.plans[date] = meals;
+  await dbPut('plans', { date, meals });
+}
+
+/* ========================================================
+   弹层控制
+======================================================== */
+function openSheet(id, maskId)  { $('#' + id).classList.add('open');  $('#' + maskId).classList.add('open'); }
+function closeSheet(id, maskId) { $('#' + id).classList.remove('open'); $('#' + maskId).classList.remove('open'); }
+
+/* ========================================================
+   日历渲染
+======================================================== */
+function renderCalendar() {
+  const y = state.currentMonth.getFullYear();
+  const m = state.currentMonth.getMonth();
+  $('#calTitle').textContent = `${y}年${m + 1}月`;
+
+  const first = new Date(y, m, 1);
+  const offset = (first.getDay() + 6) % 7;          // 周一开头
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const prevDays = new Date(y, m, 0).getDate();
+  const todayStr = fmtDate(new Date());
+
+  let html = '';
+  for (let i = offset - 1; i >= 0; i--) {
+    html += `<div class="cal-cell other"><span class="dnum">${prevDays - i}</span></div>`;
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${y}-${pad(m + 1)}-${pad(d)}`;
+    const meals = state.plans[ds];
+    let dots = '';
+    if (meals) {
+      const b = (meals.breakfast || []).length;
+      const l = (meals.lunch || []).length;
+      const dn = (meals.dinner || []).length;
+      if (b || l || dn) {
+        dots = '<div class="dots">'
+          + (b ? '<i class="dot b"></i>' : '')
+          + (l ? '<i class="dot l"></i>' : '')
+          + (dn ? '<i class="dot d"></i>' : '')
+          + '</div>';
+      }
+    }
+    html += `<div class="cal-cell${ds === todayStr ? ' today' : ''}" data-date="${ds}">
+      <span class="dnum">${d}</span>${dots}</div>`;
+  }
+  const used = offset + daysInMonth;
+  const rest = (7 - (used % 7)) % 7;
+  for (let i = 1; i <= rest; i++) {
+    html += `<div class="cal-cell other"><span class="dnum">${i}</span></div>`;
+  }
+  $('#calGrid').innerHTML = html;
+  renderTodayCard();
+}
+
+function renderTodayCard() {
+  const today = new Date();
+  const ds = fmtDate(today);
+  const meals = state.plans[ds] || {};
+  const names = k => (meals[k] || []).map(id => state.dishMap[id] && state.dishMap[id].name).filter(Boolean);
+  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  const row = (icon, label, arr) => `
+    <div class="tc-row">
+      <span class="tc-label">${icon} ${label}</span>
+      <span class="tc-val${arr.length ? '' : ' muted'}">${arr.length ? esc(arr.join('、')) : '未安排'}</span>
+    </div>`;
+  $('#todayCard').innerHTML = `
+    <div class="tc-head">今天 · ${today.getMonth() + 1}月${today.getDate()}日 ${weekdays[today.getDay()]}</div>
+    ${row('🌅', '早餐', names('breakfast'))}
+    ${row('☀️', '午餐', names('lunch'))}
+    ${row('🌙', '晚餐', names('dinner'))}
+    <button class="tc-edit" data-date="${ds}">管理今天的三餐 →</button>
+  `;
+}
+
+/* ========================================================
+   某天三餐面板
+======================================================== */
+function openDay(dateStr) {
+  state.selectedDate = dateStr;
+  renderDaySheet();
+  openSheet('sheetDay', 'mask1');
+}
+
+function renderDaySheet() {
+  const ds = state.selectedDate;
+  if (!ds) return;
+  const d = new Date(ds + 'T00:00:00');
+  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  $('#dayTitle').textContent = `${d.getMonth() + 1}月${d.getDate()}日 · ${weekdays[d.getDay()]}`;
+
+  const meals = state.plans[ds] || {};
+  $('#dayBody').innerHTML = MEALS.map(cfg => {
+    const ids = Array.isArray(meals[cfg.key]) ? meals[cfg.key] : [];
+    const items = ids.map(id => {
+      const dish = state.dishMap[id];
+      if (!dish) return '';
+      return `<div class="meal-item" data-id="${id}">
+        <img src="${dish.cover || PLACEHOLDER}" alt="">
+        <span class="mi-name">${esc(dish.name)}</span>
+        <button class="mi-del" data-meal="${cfg.key}" data-id="${id}" title="移除">✕</button>
+      </div>`;
+    }).join('');
+    return `<section class="meal-card">
+      <div class="meal-head">
+        <span class="meal-name">${cfg.icon} ${cfg.name}</span>
+        <button class="btn-add" data-meal="${cfg.key}">＋ 加菜</button>
+      </div>
+      <div class="meal-list">${items || '<div class="empty-tip">还没有安排菜品</div>'}</div>
+    </section>`;
+  }).join('');
+}
+
+/* 移除某餐中的菜 */
+async function removeFromMeal(mealKey, dishId) {
+  const ds = state.selectedDate;
+  if (!ds) return;
+  const meals = copyMeals(state.plans[ds]);
+  meals[mealKey] = meals[mealKey].filter(x => x !== dishId);
+  await savePlan(ds, meals);
+  renderDaySheet();
+  renderCalendar();
+}
+
+/* ========================================================
+   选菜面板
+======================================================== */
+function openPick(mealKey) {
+  state.pickMeal = mealKey;
+  const meals = state.plans[state.selectedDate] || {};
+  state.pickSelected = new Set(Array.isArray(meals[mealKey]) ? meals[mealKey] : []);
+  renderPick();
+  openSheet('sheetPick', 'mask2');
+}
+
+function renderPick() {
+  const cfg = MEALS.find(m => m.key === state.pickMeal);
+  $('#pickTitle').textContent = `为${cfg ? cfg.name : ''}选择菜品`;
+  const body = $('#pickBody');
+
+  if (!state.dishes.length) {
+    body.innerHTML = `<div class="empty-state">
+      <div class="es-icon">🍳</div>
+      菜单库还是空的<br>先去「菜单库」添加菜品吧
+    </div>`;
+    $('#pickConfirm').disabled = true;
+    return;
+  }
+  $('#pickConfirm').disabled = false;
+  body.innerHTML = `<div class="pick-grid">${state.dishes.map(d => `
+    <div class="pick-card${state.pickSelected.has(d.id) ? ' sel' : ''}" data-id="${d.id}">
+      <div class="pick-thumb"><img src="${d.cover || PLACEHOLDER}" alt=""></div>
+      <div class="pick-name">${esc(d.name)}</div>
+      <div class="pick-check">✓</div>
+    </div>`).join('')}</div>`;
+}
+
+async function confirmPick() {
+  const ds = state.selectedDate;
+  if (!ds || !state.pickMeal) return;
+  const meals = copyMeals(state.plans[ds]);
+  meals[state.pickMeal] = [...state.pickSelected];
+  await savePlan(ds, meals);
+  closeSheet('sheetPick', 'mask2');
+  renderDaySheet();
+  renderCalendar();
+}
+
+/* ========================================================
+   菜单库渲染
+======================================================== */
+function renderMenuPage() {
+  const q = state.searchQuery.trim().toLowerCase();
+  const list = q ? state.dishes.filter(d => (d.name || '').toLowerCase().includes(q)) : state.dishes;
+  const grid = $('#dishGrid');
+
+  if (!state.dishes.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="es-icon">🍲</div>
+      还没有菜品<br>点右下角「＋」添加第一道菜吧
+    </div>`;
+    return;
+  }
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">没有找到「${esc(state.searchQuery)}」</div>`;
+    return;
+  }
+  grid.innerHTML = list.map(d => `
+    <div class="dish-card" data-id="${d.id}">
+      <div class="dish-thumb"><img src="${d.cover || PLACEHOLDER}" alt=""></div>
+      <div class="dish-name">${esc(d.name)}</div>
+    </div>`).join('');
+}
+
+/* ========================================================
+   菜品详情
+======================================================== */
+function openDishDetail(id) {
+  const d = state.dishMap[id];
+  if (!d) return;
+  $('#dishTitle').textContent = d.name;
+
+  const ing = (d.ingredients || []).filter(i => (i.name || '').trim() || (i.amount || '').trim());
+  const imgs = d.detailImgs || [];
+
+  $('#dishBody').innerHTML = `
+    ${d.cover
+      ? `<img class="detail-cover" src="${d.cover}" alt="">`
+      : `<div class="detail-cover no-img">🍽</div>`}
+    <h3 class="detail-name">${esc(d.name)}</h3>
+    ${ing.length ? `
+      <div class="detail-section">
+        <div class="sec-title">🧾 配料</div>
+        <ul class="ing-list">
+          ${ing.map(i => `<li><span>${esc(i.name)}</span><span class="amt">${esc(i.amount)}</span></li>`).join('')}
+        </ul>
+      </div>` : ''}
+    ${imgs.length ? `
+      <div class="detail-section">
+        <div class="sec-title">🖼 详情图</div>
+        ${imgs.map(s => `<img class="detail-img" src="${s}" alt="">`).join('')}
+      </div>` : ''}
+    ${d.note ? `
+      <div class="detail-section">
+        <div class="sec-title">📝 备注</div>
+        <p class="note-text">${esc(d.note)}</p>
+      </div>` : ''}
+    <div class="detail-actions">
+      <button class="btn" id="btnEditDish">编辑</button>
+      <button class="btn danger" id="btnDelDish">删除</button>
+    </div>
+  `;
+  $('#btnEditDish').onclick = () => { closeSheet('sheetDish', 'mask3'); openDishForm(id); };
+  $('#btnDelDish').onclick = () => deleteDish(id);
+  openSheet('sheetDish', 'mask3');
+}
+
+async function deleteDish(id) {
+  const d = state.dishMap[id];
+  if (!d) return;
+  if (!confirm(`确定删除「${d.name}」吗？\n（会同时从所有日期的三餐安排中移除）`)) return;
+
+  await dbDelete('dishes', id);
+  // 清理所有计划中的引用
+  for (const date in state.plans) {
+    const meals = state.plans[date];
+    let changed = false;
+    MEALS.forEach(m => {
+      const arr = meals[m.key] || [];
+      const filtered = arr.filter(x => x !== id);
+      if (filtered.length !== arr.length) { meals[m.key] = filtered; changed = true; }
+    });
+    if (changed) await dbPut('plans', { date, meals });
+  }
+  await loadData();
+  closeSheet('sheetDish', 'mask3');
+  renderAll();
+  if ($('#sheetDay').classList.contains('open')) renderDaySheet();
+}
+
+/* ========================================================
+   菜品表单
+======================================================== */
+function addIngRow(name = '', amount = '') {
+  const div = document.createElement('div');
+  div.className = 'ing-row';
+  div.innerHTML = `
+    <input class="input ing-name" placeholder="配料名" value="${esc(name)}" autocomplete="off">
+    <input class="input ing-amount" placeholder="用量" value="${esc(amount)}" autocomplete="off">
+    <button type="button" class="icon-btn ing-del">✕</button>`;
+  div.querySelector('.ing-del').onclick = () => div.remove();
+  $('#ingList').appendChild(div);
+}
+
+function renderCoverPreview() {
+  const img = $('#coverPreview'), tip = $('#coverTip');
+  if (formCover) {
+    img.src = formCover;
+    img.classList.remove('hidden');
+    tip.classList.add('hidden');
+  } else {
+    img.classList.add('hidden');
+    img.removeAttribute('src');
+    tip.classList.remove('hidden');
+  }
+}
+
+function renderDetailImgs() {
+  const wrap = $('#detailImgs');
+  wrap.innerHTML = formDetails.map((src, i) => `
+    <div class="dimg">
+      <img src="${src}" alt="">
+      <button class="dimg-del" data-i="${i}">✕</button>
+    </div>`).join('');
+  wrap.querySelectorAll('.dimg-del').forEach(btn => {
+    btn.onclick = () => { formDetails.splice(+btn.dataset.i, 1); renderDetailImgs(); };
+  });
+}
+
+function openDishForm(id) {
+  editingId = id || null;
+  formCover = null;
+  formDetails = [];
+  $('#formTitle').textContent = id ? '编辑菜品' : '添加菜品';
+  $('#fName').value = '';
+  $('#fNote').value = '';
+  $('#ingList').innerHTML = '';
+
+  if (id && state.dishMap[id]) {
+    const d = state.dishMap[id];
+    $('#fName').value = d.name || '';
+    $('#fNote').value = d.note || '';
+    formCover = d.cover || null;
+    formDetails = [...(d.detailImgs || [])];
+    (d.ingredients || []).forEach(i => addIngRow(i.name, i.amount));
+  }
+  if (!$('#ingList').children.length) addIngRow();
+
+  renderCoverPreview();
+  renderDetailImgs();
+  openSheet('sheetForm', 'mask4');
+}
+
+async function saveDish() {
+  const name = $('#fName').value.trim();
+  if (!name) { alert('请填写菜名'); $('#fName').focus(); return; }
+
+  const ingredients = [...document.querySelectorAll('#ingList .ing-row')]
+    .map(r => ({
+      name: r.querySelector('.ing-name').value.trim(),
+      amount: r.querySelector('.ing-amount').value.trim()
+    }))
+    .filter(x => x.name || x.amount);
+
+  const dish = {
+    id: editingId || uid(),
+    name,
+    cover: formCover,
+    detailImgs: [...formDetails],
+    ingredients,
+    note: $('#fNote').value.trim(),
+    createdAt: editingId && state.dishMap[editingId] ? (state.dishMap[editingId].createdAt || Date.now()) : Date.now(),
+    updatedAt: Date.now()
+  };
+
+  await dbPut('dishes', dish);
+  await loadData();
+  closeSheet('sheetForm', 'mask4');
+  renderMenuPage();
+  renderCalendar();
+  if ($('#sheetDay').classList.contains('open')) renderDaySheet();
+  if ($('#sheetPick').classList.contains('open')) renderPick();
+}
+
+/* ========================================================
+   数据导入导出
+======================================================== */
+async function exportData() {
+  const plans = await dbGetAll('plans');
+  const data = {
+    app: 'my-menu',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    dishes: state.dishes,
+    plans
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `我的菜单备份_${fmtDate(new Date())}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+async function importData(file) {
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!Array.isArray(data.dishes)) throw new Error('文件格式不正确');
+    if (!confirm(`将导入 ${data.dishes.length} 道菜、${(data.plans || []).length} 天安排。\n这会覆盖当前所有数据，确定吗？`)) return;
+
+    await dbClear('dishes');
+    await dbClear('plans');
+    for (const d of data.dishes) if (d && d.id) await dbPut('dishes', d);
+    for (const p of (data.plans || [])) if (p && p.date) await dbPut('plans', p);
+
+    await loadData();
+    renderAll();
+    alert('导入完成 ✓');
+  } catch (err) {
+    alert('导入失败：' + err.message);
+  }
+}
+
+async function clearAll() {
+  if (!confirm('确定清空所有菜品和三餐安排吗？\n此操作不可恢复，建议先导出备份。')) return;
+  if (!confirm('再次确认：真的要全部删除吗？')) return;
+  await dbClear('dishes');
+  await dbClear('plans');
+  await loadData();
+  renderAll();
+  closeSheet('sheetMore', 'mask5');
+}
+
+/* ========================================================
+   总渲染
+======================================================== */
+function renderAll() {
+  renderCalendar();
+  renderMenuPage();
+}
+
+/* ========================================================
+   事件绑定
+======================================================== */
+function bindEvents() {
+  /* --- Tab 切换 --- */
+  document.querySelectorAll('.tabbar button').forEach(btn => {
+    btn.onclick = () => {
+      const tab = btn.dataset.tab;
+      state.tab = tab;
+      document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('active', b === btn));
+      $('#page-calendar').classList.toggle('hidden', tab !== 'calendar');
+      $('#page-menu').classList.toggle('hidden', tab !== 'menu');
+      $('#fab').classList.toggle('hidden', tab !== 'menu');
+      $('#pageTitle').textContent = tab === 'calendar' ? '我的菜单' : '菜单库';
+      $('#main').scrollTop = 0;
+    };
+  });
+
+  /* --- 通用关闭按钮 --- */
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('[data-close]');
+    if (btn) {
+      const [sheetId, maskId] = btn.dataset.close.split(',');
+      closeSheet(sheetId, maskId);
+    }
+  });
+
+  /* --- 点击遮罩关闭 --- */
+  [['mask1','sheetDay'], ['mask2','sheetPick'], ['mask3','sheetDish'], ['mask4','sheetForm'], ['mask5','sheetMore']]
+    .forEach(([maskId, sheetId]) => {
+      $('#' + maskId).onclick = () => closeSheet(sheetId, maskId);
+    });
+
+  /* --- 月份切换 --- */
+  $('#prevMonth').onclick = () => {
+    const d = state.currentMonth;
+    state.currentMonth = new Date(d.getFullYear(), d.getMonth() - 1, 1);
+    renderCalendar();
+  };
+  $('#nextMonth').onclick = () => {
+    const d = state.currentMonth;
+    state.currentMonth = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+    renderCalendar();
+  };
+  $('#calTitle').onclick = () => {
+    state.currentMonth = new Date();
+    renderCalendar();
+  };
+
+  /* --- 日历格子点击 --- */
+  $('#calGrid').addEventListener('click', e => {
+    const cell = e.target.closest('.cal-cell[data-date]');
+    if (cell) openDay(cell.dataset.date);
+  });
+
+  /* --- 今日速览点击 --- */
+  $('#todayCard').addEventListener('click', e => {
+    const btn = e.target.closest('[data-date]');
+    if (btn) openDay(btn.dataset.date);
+  });
+
+  /* --- 三餐面板交互 --- */
+  $('#dayBody').addEventListener('click', e => {
+    const del = e.target.closest('.mi-del');
+    if (del) { e.stopPropagation(); removeFromMeal(del.dataset.meal, del.dataset.id); return; }
+
+    const add = e.target.closest('.btn-add');
+    if (add) { openPick(add.dataset.meal); return; }
+
+    const item = e.target.closest('.meal-item');
+    if (item) { openDishDetail(item.dataset.id); return; }
+  });
+
+  /* --- 选菜面板 --- */
+  $('#pickBody').addEventListener('click', e => {
+    const card = e.target.closest('.pick-card');
+    if (!card) return;
+    const id = card.dataset.id;
+    if (state.pickSelected.has(id)) state.pickSelected.delete(id);
+    else state.pickSelected.add(id);
+    card.classList.toggle('sel');
+  });
+  $('#pickConfirm').onclick = confirmPick;
+
+  /* --- 菜单库 --- */
+  $('#searchInput').addEventListener('input', e => {
+    state.searchQuery = e.target.value;
+    renderMenuPage();
+  });
+  $('#dishGrid').addEventListener('click', e => {
+    const card = e.target.closest('.dish-card');
+    if (card) openDishDetail(card.dataset.id);
+  });
+  $('#fab').onclick = () => openDishForm(null);
+
+  /* --- 表单 --- */
+  $('#coverInput').addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    try { formCover = await fileToDataURL(f); renderCoverPreview(); }
+    catch (err) { alert('图片读取失败，请换一张试试'); }
+    e.target.value = '';
+  });
+  $('#detailInput').addEventListener('change', async e => {
+    const files = [...(e.target.files || [])];
+    for (const f of files) {
+      try { formDetails.push(await fileToDataURL(f)); }
+      catch (err) { alert('有一张图片读取失败'); }
+    }
+    renderDetailImgs();
+    e.target.value = '';
+  });
+  $('#addIng').onclick = () => addIngRow();
+  $('#btnSaveDish').onclick = saveDish;
+
+  /* --- 更多操作 --- */
+  $('#btnMore').onclick = () => openSheet('sheetMore', 'mask5');
+  $('#btnExport').onclick = () => { closeSheet('sheetMore', 'mask5'); exportData(); };
+  $('#btnImport').onclick = () => { closeSheet('sheetMore', 'mask5'); $('#importInput').click(); };
+  $('#btnClear').onclick = clearAll;
+  $('#importInput').addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0];
+    if (f) await importData(f);
+    e.target.value = '';
+  });
+}
+
+/* ========================================================
+   启动
+======================================================== */
+(async function init() {
+  try {
+    await openDB();
+    await loadData();
+    bindEvents();
+    renderAll();
+  } catch (err) {
+    document.body.innerHTML = `<div style="padding:40px;font-family:sans-serif;line-height:2">
+      <h3>初始化失败</h3><p>${esc(err.message)}</p>
+      <p>请使用较新版本的 Chrome / Edge / Safari 打开本文件。</p>
+    </div>`;
+  }
+})();
+</script>
+(function () {
+  if (localStorage.getItem('mm_tip_shown')) return;
+  localStorage.setItem('mm_tip_shown', '1');
+  setTimeout(function () {
+    var t = document.createElement('div');
+    t.textContent = '提示：菜品和安排保存在本机浏览器，建议定期用「⋯ → 导出备份」保存一份';
+    t.style.cssText = 'position:fixed;left:50%;bottom:90px;transform:translateX(-50%);' +
+      'background:rgba(0,0,0,.75);color:#fff;font-size:13px;padding:10px 16px;border-radius:10px;' +
+      'z-index:999;max-width:86%;line-height:1.5;text-align:center';
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 6000);
+  }, 1500);
+})();
+</script>
+</body>
+</html>
